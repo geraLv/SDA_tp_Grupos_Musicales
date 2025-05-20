@@ -2,82 +2,129 @@
 <html>
   <head>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.0.0/dist/tf.min.js"></script>
-    <body>
-      <div id="container"></div>
-      <button>procesar información</button>
-      <button>enviar</button>
-    </body>
-    <script>
-      // Tidy to auto-clean all these tensors
-      tf.tidy(() => {
-        const users = ["Gant", "Todd", "Jed", "Justin"];
-        const bands = [
-          "Nirvana",
-          "Nine Inch Nails",
-          "Backstreet Boys",
-          "N Sync",
-          "Night Club",
-          "Apashe",
-          "STP",
-        ];
-        const features = [
-          "Grunge",
-          "Rock",
-          "Industrial",
-          "Boy Band",
-          "Dance",
-          "Techno",
-        ];
-
-        for (let i = 0; i < bands.length; i++) {
-          document.getElementById("container").innerHTML +=
-            "<div><p>" +
-            bands[i] +
-            `</p><input id='input${i}' type='text'></input><button id='enviar${i}'>enviar</button></div>`;
-        }
-
-        for (let i = 0; i < bands.length; i++) {
-          const recivirValor = document
-            .getElementById(`enviar${i}`)
-            .addEventListener("click", () => {
-              valor = document.getElementById(`input${i}`).value;
-              console.log(valor);
-            });
-        }
-        // User votes <4>
-        const user_votes = tf.tensor([
-          [10, 9, 1, 1, 8, 7, 8],
-          [6, 8, 2, 2, 0, 10, 0],
-          [0, 2, 10, 9, 3, 7, 0],
-          [7, 4, 2, 3, 6, 5, 5],
-        ]);
-
-        // Music Styles <5>
-        const band_feats = tf.tensor([
-          [1, 1, 0, 0, 0, 0],
-          [1, 0, 1, 0, 0, 0],
-          [0, 0, 0, 1, 1, 0],
-          [0, 0, 0, 1, 0, 0],
-          [0, 0, 1, 0, 0, 1],
-          [0, 0, 1, 0, 0, 1],
-          [1, 1, 0, 0, 0, 0],
-        ]);
-
-        // User's favorite styles
-        const user_feats = tf.matMul(user_votes, band_feats);
-        // Print the answers
-        user_feats.print();
-
-        // Let's make them pretty
-        const top_user_features = tf.topk(user_feats, features.length);
-        // Back to JavaScript
-        const top_genres = top_user_features.indices.arraySync();
-        // print the results
-        users.map((u, i) => {
-          const rankedCategories = top_genres[i].map((v) => features[v]);
-          console.log(u, rankedCategories);
-        });
-      });
-    </script>
   </head>
+  <style>
+    .body {
+      height: 100vh;
+    }
+    .div {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100vh;
+      height: 100vh;
+    }
+    .button {
+      border-radius: 5px;
+      height: 35px;
+    }
+    .container {
+      background-color: darkgrey;
+      padding: 8%;
+      border-radius: 8px;
+      box-shadow: 10px;
+    }
+  </style>
+  <body>
+    <div class="div">
+      <div class="container" id="container">
+        <button class="button" id="procesar">procesar información</button>
+      </div>
+    </div>
+  </body>
+  <script>
+    // Tidy to auto-clean all these tensors
+    tf.tidy(() => {
+      const bands = [
+        "Nirvana",
+        "Nine Inch Nails",
+        "Backstreet Boys",
+        "N Sync",
+        "Night Club",
+        "Apashe",
+        "STP",
+      ];
+      const features = [
+        "Grunge",
+        "Rock",
+        "Industrial",
+        "Boy Band",
+        "Dance",
+        "Techno",
+      ];
+
+      // informe_completo = false;
+
+      // while (informe_completo == false) {
+      //   let valor = prompt("")
+      // }
+      // while (true) {
+
+      //   break;
+      // }
+      let user_votes = [];
+      let tensorVotes = tf.tensor([]);
+      function getUserVotes() {
+        for (let i = 0; i < bands.length; i++) {
+          let valoracionBanda = prompt(
+            `¿Que te parece la banda ${bands[i]}?: Ingrese un valor numérico entre 1 y 10`
+          );
+          valoracionBanda = parseInt(valoracionBanda);
+          if (
+            isNaN(valoracionBanda) ||
+            valoracionBanda < 1 ||
+            valoracionBanda > 10
+          ) {
+            console.log("Ingrese un número válido entre 1 y 10");
+          } else {
+            user_votes.push(valoracionBanda);
+          }
+        }
+        tensorVotes = tf.concat([tensorVotes, tf.tensor([user_votes])], 0);
+      }
+      getUserVotes();
+      tensorVotes.print();
+
+      // Music Styles <5>
+      const band_feats = tf.tensor([
+        [1, 1, 0, 0, 0, 0],
+        [1, 0, 1, 0, 0, 0],
+        [0, 0, 0, 1, 1, 0],
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 1, 0, 0, 1],
+        [0, 0, 1, 0, 0, 1],
+        [1, 1, 0, 0, 0, 0],
+      ]);
+
+      // User's favorite styles
+      const user_feats = tf.matMul(tensorVotes, band_feats);
+      // Print the answers
+      user_feats.print();
+
+      // Let's make them pretty
+      const top_user_features = tf.topk(
+        user_feats,
+        Math.min(features.length, user_feats.shape[1])
+      );
+      // Back to JavaScript
+
+      const top_genres = top_user_features.indices.arraySync();
+      console.log(top_genres);
+      // print the results
+      console.log("Top Generos Musicales mejor votados: ");
+      for (let i = 0; i < top_genres[0].length; i++) {
+        console.log([i + 1] + "_ " + features[top_genres[0][i]]);
+      }
+
+      document.getElementById("procesar").addEventListener("click", () => {
+        document.getElementById("container").innerHTML =
+          "<h1>Top Generos Musicales mejor votados: </h1><br>";
+        for (let i = 0; i < top_genres[0].length; i++) {
+          document.getElementById("container").innerHTML +=
+            [i + 1] + "_ " + features[top_genres[0][i]] + "<br>";
+        }
+      });
+    });
+  </script>
 </html>
